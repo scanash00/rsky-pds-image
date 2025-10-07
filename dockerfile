@@ -12,8 +12,7 @@ RUN cargo build --release --package rsky-pds
 # ------------------------------
 # Stage 2: Runtime
 # ------------------------------
-# bro this better work else im going to turn into a wolf 
-FROM debian:trixie-slim 
+FROM debian:trixie-slim
 
 WORKDIR /usr/src/rsky
 
@@ -22,7 +21,7 @@ RUN apt-get update && \
         ca-certificates \
         libpq5 \
         libssl3 \
-        libldap-2.5-0 \
+        libldap2 \
         libsasl2-2 \
         libsasl2-modules \
         libsasl2-modules-db \
