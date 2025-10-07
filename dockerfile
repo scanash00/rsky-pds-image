@@ -12,7 +12,8 @@ RUN cargo build --release --package rsky-pds
 # ------------------------------
 # Stage 2: Runtime
 # ------------------------------
-FROM debian:trixie-slim # bro this better work else im going to turn into a wolf 
+# bro this better work else im going to turn into a wolf 
+FROM debian:trixie-slim 
 
 WORKDIR /usr/src/rsky
 
