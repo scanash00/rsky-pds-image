@@ -8,7 +8,7 @@ WORKDIR /usr/src/rsky
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 
 RUN cargo build --release --package rsky-pds
-RUN cargo build --release --package rsky-pdsadmin --features db_cli
+RUN cargo build --release --package rsky-pdsadmin
 
 # ------------------------------
 # Stage 2: Runtime
