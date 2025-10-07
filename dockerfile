@@ -12,7 +12,7 @@ RUN cargo build --release --package rsky-pds
 # ------------------------------
 # Stage 2: Runtime
 # ------------------------------
-FROM debian:bookworm-slim
+FROM debian:trixie-slim # bro this better work else im going to turn into a wolf 
 
 WORKDIR /usr/src/rsky
 
@@ -33,7 +33,6 @@ LABEL org.opencontainers.image.source=https://github.com/blacksky-algorithms/rsk
 
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=2583
-
 ENV TZ=UTC
 
 CMD ["./rsky-pds"]
