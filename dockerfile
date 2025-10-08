@@ -5,10 +5,26 @@ FROM rust:latest AS builder
 
 WORKDIR /usr/src/rsky
 
+RUN apt-get update && \
+    apt-get install -y \
+        git \
+        curl \
+        build-essential \
+        libpq-dev \
+        libssl-dev \
+        pkg-config \
+        libmariadb-dev \
+        libmariadb-dev-compat \
+        libsqlite3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 
-RUN cargo build --release --package rsky-pds
-RUN cargo build --release --package rsky-pdsadmin
+WORKDIR /usr/src/rsky/rsky-pds
+RUN cargo build --release
+
+WORKDIR /usr/src/rsky/rsky-pdsadmin
+RUN cargo build --release
 
 # ------------------------------
 # Stage 2: Runtime
@@ -26,17 +42,23 @@ RUN apt-get update && \
         libsasl2-2 \
         libsasl2-modules \
         libsasl2-modules-db \
+        libmariadb3 \
+        libsqlite3-0 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/rsky/target/release/rsky-pds ./rsky-pds
-COPY --from=builder /usr/src/rsky/target/release/rsky-pdsadmin ./rsky-pdsadmin
+COPY --from=builder /usr/src/rsky/rsky-pds/target/release/rsky-pds ./rsky-pds
+COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/rsky-pdsadmin ./rsky-pdsadmin
+
+RUN mkdir -p ./rsky-pdsadmin && touch ./rsky-pdsadmin/pds.env
 
 RUN install -m 755 ./rsky-pdsadmin /usr/local/bin/rsky-pdsadmin
 
-LABEL org.opencontainers.image.source=https://github.com/blacksky-algorithms/rsky
+LABEL org.opencontainers.image.source="https://github.com/blacksky-algorithms/rsky"
 
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=2583
 ENV TZ=UTC
+
+EXPOSE 2583
 
 CMD ["./rsky-pds"]
