@@ -1,4 +1,3 @@
-# Designed for Coolify
 services:
   postgres:
     image: 'postgres:15'
@@ -23,7 +22,7 @@ services:
       - 'PDS_PORT=${PDS_PORT:-2583}'
       - 'PDS_HOSTNAME=${SERVICE_FQDN_RSKY_PDS_2583}'
       - 'PDS_PROTOCOL=${PDS_PROTOCOL}'
-      - 'PDS_SERVICE_DID=did:web:${SERVICE_FQDN_RSKY_PDS_2583}'
+      - 'PDS_SERVICE_DID=${PDS_SERVICE_DID}'
       - 'PDS_VERSION=${PDS_VERSION:-0.1.0}'
       - 'PDS_ACCEPTING_REPO_IMPORTS=${PDS_ACCEPTING_REPO_IMPORTS:-true}'
       - 'PDS_BLOB_UPLOAD_LIMIT=${PDS_BLOB_UPLOAD_LIMIT:-5242880}'
