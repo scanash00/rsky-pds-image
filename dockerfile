@@ -5,6 +5,7 @@ FROM rust:latest AS builder
 
 WORKDIR /usr/src/rsky
 
+# Install build dependencies
 RUN apt-get update && \
     apt-get install -y \
         git \
@@ -18,13 +19,16 @@ RUN apt-get update && \
         libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
+# Clone repository
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 
+# Build rsky-pds binary explicitly
 WORKDIR /usr/src/rsky/rsky-pds
-RUN cargo build --release
+RUN cargo build --release --bin rsky-pds
 
+# Build rsky-pdsadmin binary explicitly
 WORKDIR /usr/src/rsky/rsky-pdsadmin
-RUN cargo build --release
+RUN cargo build --release --bin rsky-pdsadmin
 
 # ------------------------------
 # Stage 2: Runtime
@@ -33,6 +37,7 @@ FROM debian:trixie-slim
 
 WORKDIR /usr/src/rsky
 
+# Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y \
         ca-certificates \
@@ -46,19 +51,23 @@ RUN apt-get update && \
         libsqlite3-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy binaries from builder (paths now guaranteed)
 COPY --from=builder /usr/src/rsky/rsky-pds/target/release/rsky-pds ./rsky-pds
 COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/rsky-pdsadmin ./rsky-pdsadmin
 
-RUN mkdir -p ./rsky-pdsadmin && touch ./rsky-pdsadmin/pds.env
+# Make sure pdsadmin has a pds.env placeholder
+RUN install -m 755 ./rsky-pdsadmin /usr/local/bin/rsky-pdsadmin && touch ./pds.env
 
-RUN install -m 755 ./rsky-pdsadmin /usr/local/bin/rsky-pdsadmin
-
+# Metadata label
 LABEL org.opencontainers.image.source="https://github.com/blacksky-algorithms/rsky"
 
+# Environment configuration
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=2583
 ENV TZ=UTC
 
+# Expose default port
 EXPOSE 2583
 
+# Start the PDS server by default
 CMD ["./rsky-pds"]
