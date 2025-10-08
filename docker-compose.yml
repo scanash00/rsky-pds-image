@@ -1,0 +1,40 @@
+# Designed for Coolify
+services:
+  postgres:
+    image: 'postgres:15'
+    restart: unless-stopped
+    environment:
+      - 'POSTGRES_USER=${SERVICE_USER_POSTGRES}'
+      - 'POSTGRES_PASSWORD=${SERVICE_PASSWORD_POSTGRES}'
+      - 'POSTGRES_DB=${POSTGRES_DB:-rsky_db}'
+    volumes:
+      - 'postgres_data:/var/lib/postgresql/data'
+  rsky-pds:
+    image: 'ghcr.io/scanash00/rsky-pds:latest'
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+      - SERVICE_FQDN_RSKY_PDS_2583
+      - 'PDS_ADMIN_PASSWORD=${SERVICE_PASSWORD_ADMIN}'
+      - 'PDS_ADMIN_EMAIL=${PDS_ADMIN_EMAIL}'
+      - 'PDS_PORT=${PDS_PORT:-2583}'
+      - 'PDS_HOSTNAME=${SERVICE_FQDN_RSKY_PDS_2583}'
+      - 'PDS_PROTOCOL=${PDS_PROTOCOL}'
+      - 'PDS_SERVICE_DID=did:web:${SERVICE_FQDN_RSKY_PDS_2583}'
+      - 'PDS_VERSION=${PDS_VERSION:-0.1.0}'
+      - 'PDS_ACCEPTING_REPO_IMPORTS=${PDS_ACCEPTING_REPO_IMPORTS:-true}'
+      - 'PDS_BLOB_UPLOAD_LIMIT=${PDS_BLOB_UPLOAD_LIMIT:-5242880}'
+      - 'DATABASE_URL=postgresql://${SERVICE_USER_POSTGRES}:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/${POSTGRES_DB:-rsky_db}'
+      - 'PDS_DID_PLC_URL=${PDS_DID_PLC_URL:-https://plc.directory}'
+      - 'PDS_ID_RESOLVER_TIMEOUT=${PDS_ID_RESOLVER_TIMEOUT:-3}'
+      - 'PDS_CONTACT_EMAIL_ADDRESS=${PDS_CONTACT_EMAIL_ADDRESS}'
+      - 'PDS_SERVICE_HANDLE_DOMAINS=${PDS_SERVICE_HANDLE_DOMAINS}'
+      - 'PDS_INVITE_REQUIRED=${PDS_INVITE_REQUIRED}'
+      - 'PDS_BSKY_APP_VIEW_DID=${PDS_BSKY_APP_VIEW_DID:-did:web:api.bsky.app}'
+      - 'PDS_BSKY_APP_VIEW_URL=${PDS_BSKY_APP_VIEW_URL:-https://api.bsky.app}'
+      - 'PDS_CRAWLERS=${PDS_CRAWLERS:-https://bsky.network}'
+      - 'PDS_REPORT_SERVICE_DID=${PDS_REPORT_SERVICE_DID:-did:plc:ar7c4by46qjdydhdevvrndac}'
+      - 'PDS_REPORT_SERVICE_URL=${PDS_REPORT_SERVICE_URL:-https://mod.bsky.app/xrpc/com.atproto.moderation.createReport}'
