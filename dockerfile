@@ -43,13 +43,13 @@ RUN apt-get update && \
         libsasl2-modules \
         libsasl2-modules-db \
         libmariadb3 \
-        libsqlite3-0 \
-    && rm -rf /var/lib/apt/lists/*
+        libsqlite3-0 && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/rsky/rsky-pds/target/release/rsky-pds ./rsky-pds
-COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/pdsadmin ./rsky-pdsadmin
+COPY --from=builder /usr/src/rsky/target/release/rsky-pds ./rsky-pds
+COPY --from=builder /usr/src/rsky/target/release/pdsadmin ./pdsadmin
 
-RUN install -m 755 ./rsky-pdsadmin /usr/local/bin/rsky-pdsadmin && touch ./pds.env
+RUN install -m 755 ./pdsadmin /usr/local/bin/pdsadmin && touch ./pds.env
 
 LABEL org.opencontainers.image.source="https://github.com/blacksky-algorithms/rsky"
 
