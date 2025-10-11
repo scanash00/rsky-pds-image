@@ -54,7 +54,7 @@ COPY --from=builder /usr/src/rsky/target/release/rsky-pds ./rsky-pds
 COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/pdsadmin ./pdsadmin
 COPY --from=builder /root/.cargo/bin/diesel ./diesel
 
-COPY --from=builder /usr/src/rsky/migrations ./migrations
+COPY --from=builder /usr/src/rsky/rsky-pds/migrations ./rsky-pds/migrations
 
 COPY entrypoint.sh /usr/src/rsky/entrypoint.sh
 RUN chmod +x /usr/src/rsky/entrypoint.sh
