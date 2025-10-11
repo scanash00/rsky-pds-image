@@ -2,6 +2,7 @@
 # Stage 1: Builder
 # ------------------------------
 FROM rust:latest AS builder
+
 WORKDIR /usr/src/rsky
 
 RUN apt-get update && \
@@ -19,16 +20,13 @@ RUN apt-get update && \
 
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 
-WORKDIR /usr/src/rsky/rsky-pds
-RUN cargo build --release --bin rsky-pds
-
-WORKDIR /usr/src/rsky/rsky-pdsadmin
-RUN cargo build --release --bin pdsadmin
+RUN cargo build --release --package rsky-pds --package rsky-pdsadmin
 
 # ------------------------------
 # Stage 2: Runtime
 # ------------------------------
 FROM debian:trixie-slim
+
 WORKDIR /usr/src/rsky
 
 RUN apt-get update && \
@@ -44,8 +42,8 @@ RUN apt-get update && \
         libsqlite3-0 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/rsky/rsky-pds/target/release/rsky-pds ./rsky-pds
-COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/pdsadmin ./pdsadmin
+COPY --from=builder /usr/src/rsky/target/release/rsky-pds ./rsky-pds
+COPY --from=builder /usr/src/rsky/target/release/pdsadmin ./pdsadmin
 
 RUN install -m 755 ./pdsadmin /usr/local/bin/pdsadmin && touch ./pds.env
 
