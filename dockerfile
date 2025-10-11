@@ -57,8 +57,7 @@ COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/pdsadmin ./pdsadm
 COPY --from=builder /usr/src/rsky/migrations ./migrations
 
 RUN install -m 755 ./pdsadmin /usr/local/bin/pdsadmin && \
-    ln -s /usr/local/bin/pdsadmin /bin/pdsadmin && \
-    touch ./pds.env
+    ln -s /usr/local/bin/pdsadmin /bin/pdsadmin
 
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=2583
@@ -67,5 +66,46 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 EXPOSE 2583
 
-# Initialize DB and start PDS
-CMD ["sh", "-c", "pdsadmin rsky-pds init-db && ./rsky-pds"]
+# ------------------------------
+# CMD: generate pds.env from runtime envs, init DB, run server
+# ------------------------------
+CMD ["sh", "-c", "\
+    echo 'Generating pds.env from runtime environment...' && \
+    cat > ./pds.env <<EOL
+RUST_LOG=${RUST_LOG}
+RUST_BACKTRACE=${RUST_BACKTRACE}
+SERVICE_URL_RSKY_PDS_2583=${SERVICE_URL_RSKY_PDS_2583}
+AWS_ENDPOINT=${AWS_ENDPOINT}
+AWS_REGION=${AWS_REGION}
+AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+PDS_ADMIN_PASS=${PDS_ADMIN_PASS}
+PDS_JWT_KEY_K256_PRIVATE_KEY_HEX=${PDS_JWT_KEY_K256_PRIVATE_KEY_HEX}
+PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX=${PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX}
+PDS_REPO_SIGNING_KEY_K256_PRIVATE_KEY_HEX=${PDS_REPO_SIGNING_KEY_K256_PRIVATE_KEY_HEX}
+PDS_ADMIN_EMAIL=${PDS_ADMIN_EMAIL}
+PDS_DATA_DIRECTORY=${PDS_DATA_DIRECTORY}
+PDS_PORT=${PDS_PORT}
+PDS_HOSTNAME=${PDS_HOSTNAME}
+PDS_PROTOCOL=${PDS_PROTOCOL}
+PDS_SERVICE_DID=${PDS_SERVICE_DID}
+PDS_VERSION=${PDS_VERSION}
+PDS_ACCEPTING_REPO_IMPORTS=${PDS_ACCEPTING_REPO_IMPORTS}
+PDS_BLOB_UPLOAD_LIMIT=${PDS_BLOB_UPLOAD_LIMIT}
+DATABASE_URL=${DATABASE_URL}
+PDS_DID_PLC_URL=${PDS_DID_PLC_URL}
+PDS_ID_RESOLVER_TIMEOUT=${PDS_ID_RESOLVER_TIMEOUT}
+PDS_CONTACT_EMAIL_ADDRESS=${PDS_CONTACT_EMAIL_ADDRESS}
+PDS_SERVICE_HANDLE_DOMAINS=${PDS_SERVICE_HANDLE_DOMAINS}
+PDS_INVITE_REQUIRED=${PDS_INVITE_REQUIRED}
+PDS_BSKY_APP_VIEW_DID=${PDS_BSKY_APP_VIEW_DID}
+PDS_BSKY_APP_VIEW_URL=${PDS_BSKY_APP_VIEW_URL}
+PDS_CRAWLERS=${PDS_CRAWLERS}
+PDS_REPORT_SERVICE_DID=${PDS_REPORT_SERVICE_DID}
+PDS_REPORT_SERVICE_URL=${PDS_REPORT_SERVICE_URL}
+EOL
+    echo 'Initializing database...' && \
+    pdsadmin rsky-pds init-db && \
+    echo 'Starting PDS server...' && \
+    ./rsky-pds \
+"]
