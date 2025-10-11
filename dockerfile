@@ -2,7 +2,6 @@
 # Stage 1: Builder
 # ------------------------------
 FROM rust:latest AS builder
-
 WORKDIR /usr/src/rsky
 
 RUN apt-get update && \
@@ -30,7 +29,6 @@ RUN cargo build --release --bin pdsadmin
 # Stage 2: Runtime
 # ------------------------------
 FROM debian:trixie-slim
-
 WORKDIR /usr/src/rsky
 
 RUN apt-get update && \
