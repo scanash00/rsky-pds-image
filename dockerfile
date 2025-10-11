@@ -21,7 +21,6 @@ RUN apt-get update && \
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 
 RUN cargo build --release --package rsky-pds
-
 WORKDIR /usr/src/rsky/rsky-pdsadmin
 RUN cargo build --release
 
@@ -42,22 +41,31 @@ RUN apt-get update && \
         libsasl2-modules \
         libsasl2-modules-db \
         libmariadb3 \
-        libsqlite3-0 && \
+        libsqlite3-0 \
+        build-essential \
+        libpq-dev \
+        pkg-config \
+        curl && \
     rm -rf /var/lib/apt/lists/*
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cargo install diesel_cli --version 2.2.12 --no-default-features --features postgres
 
 COPY --from=builder /usr/src/rsky/target/release/rsky-pds ./rsky-pds
 COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/pdsadmin ./pdsadmin
+COPY --from=builder /usr/src/rsky/migrations ./migrations
 
 RUN install -m 755 ./pdsadmin /usr/local/bin/pdsadmin && \
     ln -s /usr/local/bin/pdsadmin /bin/pdsadmin && \
     touch ./pds.env
 
-LABEL org.opencontainers.image.source="https://github.com/blacksky-algorithms/rsky"
-
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=2583
 ENV TZ=UTC
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 EXPOSE 2583
 
-CMD ["./rsky-pds"]
+# Initialize DB and start PDS
+CMD ["sh", "-c", "pdsadmin rsky-pds init-db && ./rsky-pds"]
