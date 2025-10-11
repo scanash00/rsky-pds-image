@@ -20,7 +20,10 @@ RUN apt-get update && \
 
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 
-RUN cargo build --release --package rsky-pds --package rsky-pdsadmin
+RUN cargo build --release --package rsky-pds
+
+WORKDIR /usr/src/rsky/rsky-pdsadmin
+RUN cargo build --release
 
 # ------------------------------
 # Stage 2: Runtime
@@ -43,9 +46,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/rsky/target/release/rsky-pds ./rsky-pds
-COPY --from=builder /usr/src/rsky/target/release/pdsadmin ./pdsadmin
+COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/pdsadmin ./pdsadmin
 
-RUN install -m 755 ./pdsadmin /usr/local/bin/pdsadmin && touch ./pds.env
+RUN install -m 755 ./pdsadmin /usr/local/bin/pdsadmin && \
+    ln -s /usr/local/bin/pdsadmin /bin/pdsadmin && \
+    touch ./pds.env
 
 LABEL org.opencontainers.image.source="https://github.com/blacksky-algorithms/rsky"
 
