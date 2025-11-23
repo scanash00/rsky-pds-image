@@ -18,7 +18,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Clone the repository
-RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
+RUN git clone --depth 1 https://github.com/scanash00/rsky.git .
 
 # Build the rsky-pds package
 RUN cargo build --release --package rsky-pds
