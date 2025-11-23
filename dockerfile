@@ -4,12 +4,18 @@ FROM rust:1.86-slim-bullseye AS builder
 WORKDIR /app
 
 # Install build dependencies including PostgreSQL client libraries
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    libpq-dev \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y \
+        git \
+        curl \
+        build-essential \
+        libpq-dev \
+        libssl-dev \
+        pkg-config \
+        libmariadb-dev \
+        libmariadb-dev-compat \
+        libsqlite3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Clone the repository
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
@@ -23,11 +29,21 @@ FROM debian:bullseye-slim
 WORKDIR /app
 
 # Install runtime dependencies including PostgreSQL client library
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl1.1 \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y \
+        ca-certificates \
+        libpq5 \
+        libssl3 \
+        libldap2 \
+        libsasl2-2 \
+        libsasl2-modules \
+        libsasl2-modules-db \
+        libmariadb3 \
+        libsqlite3-0 \
+        postgresql-client \
+        procps \
+        bash && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
 COPY --from=builder /app/target/release/rsky-pds /usr/local/bin/rsky-pds
