@@ -1,69 +1,35 @@
-# ------------------------------
-# Stage 1: Builder
-# ------------------------------
-FROM rust:latest AS builder
+# Use specific Rust version from toolchain
+FROM rust:1.86-slim-bullseye AS builder
 
-WORKDIR /usr/src/rsky
+WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y \
-        git \
-        curl \
-        build-essential \
-        libpq-dev \
-        libssl-dev \
-        pkg-config \
-        libmariadb-dev \
-        libmariadb-dev-compat \
-        libsqlite3-dev && \
-    rm -rf /var/lib/apt/lists/*
+# Install build dependencies
+RUN apt-get update && apt-get install -y pkg-config libssl-dev git && rm -rf /var/lib/apt/lists/*
 
-RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
+# Copy the entire workspace
+# We assume the build context is the workspace root
+COPY . .
 
+# Build the rsky-pds package
 RUN cargo build --release --package rsky-pds
 
-WORKDIR /usr/src/rsky/rsky-pdsadmin
-RUN cargo build --release
+# Runtime stage
+FROM debian:bullseye-slim
 
-RUN cargo install diesel_cli --no-default-features --features postgres --version 2.2.12
+WORKDIR /app
 
-# ------------------------------
-# Stage 2: Runtime
-# ------------------------------
-FROM debian:trixie-slim
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y ca-certificates libssl1.1 && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/rsky
+# Copy the binary from builder
+COPY --from=builder /app/target/release/rsky-pds /usr/local/bin/rsky-pds
 
-RUN apt-get update && \
-    apt-get install -y \
-        ca-certificates \
-        libpq5 \
-        libssl3 \
-        libldap2 \
-        libsasl2-2 \
-        libsasl2-modules \
-        libsasl2-modules-db \
-        libmariadb3 \
-        libsqlite3-0 \
-        postgresql-client \
-        procps \
-        bash && \
-    rm -rf /var/lib/apt/lists/*
+# Copy migrations and configuration
+COPY rsky-pds/migrations /app/migrations
+COPY rsky-pds/diesel.toml /app/diesel.toml
 
-COPY --from=builder /usr/src/rsky/target/release/rsky-pds ./rsky-pds
-COPY --from=builder /usr/src/rsky/rsky-pdsadmin/target/release/pdsadmin ./pdsadmin
-COPY --from=builder /root/.cargo/bin/diesel ./diesel
-
-COPY --from=builder /usr/src/rsky/rsky-pds/migrations ./rsky-pds/migrations
-
-COPY entrypoint.sh /usr/src/rsky/entrypoint.sh
-RUN chmod +x /usr/src/rsky/entrypoint.sh
-
+# Set default environment variables
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=2583
-ENV TZ=UTC
-ENV PATH="/usr/src/rsky:$PATH"
 
-EXPOSE 2583
-
-CMD ["/usr/src/rsky/entrypoint.sh"]
+CMD ["rsky-pds"]
