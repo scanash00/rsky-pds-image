@@ -3,8 +3,13 @@ FROM rust:1.86-slim-bullseye AS builder
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y pkg-config libssl-dev git && rm -rf /var/lib/apt/lists/*
+# Install build dependencies including PostgreSQL client libraries
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
 # Clone the repository
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
@@ -17,8 +22,12 @@ FROM debian:bullseye-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y ca-certificates libssl1.1 && rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies including PostgreSQL client library
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl1.1 \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
 COPY --from=builder /app/target/release/rsky-pds /usr/local/bin/rsky-pds
