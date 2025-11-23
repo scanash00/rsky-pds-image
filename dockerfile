@@ -33,8 +33,8 @@ RUN apt-get update && \
     apt-get install -y \
         ca-certificates \
         libpq5 \
-        libssl3 \
-        libldap2 \
+        libssl1.1 \
+        libldap-2.4-2 \
         libsasl2-2 \
         libsasl2-modules \
         libsasl2-modules-db \
