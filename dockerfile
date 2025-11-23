@@ -1,4 +1,6 @@
-# Use specific Rust version from toolchain
+# =========================
+# Builder Stage
+# =========================
 FROM rust:1.86-slim-bullseye AS builder
 
 WORKDIR /app
@@ -17,23 +19,27 @@ RUN apt-get update && \
         libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# bro??
-# Clone the repository
+# Force cache bust when repo updates
+# (does NOT populate the directory, so clone won't fail)
 ADD https://api.github.com/repos/scanash00/rsky/git/refs/heads/main version.json
-RUN git clone --depth 1 https://github.com/scanash00/rsky.git .
+
+# Clone the repository into a clean directory
+RUN git clone --depth 1 https://github.com/scanash00/rsky.git src
+WORKDIR /app/src
 
 # Build the rsky-pds package
 RUN cargo build --release --package rsky-pds
 
-# Build the rsky-pdsadmin package (in its own workspace)
-# Create a symlink so the embed_migrations! macro can find the migrations
-RUN ln -s /app/rsky-pds /app/rsky-pdsadmin/rsky-pds
+# Build the rsky-pdsadmin package (workspace aware)
+RUN ln -s /app/src/rsky-pds /app/src/rsky-pdsadmin/rsky-pds
 RUN cd rsky-pdsadmin && cargo build --release --features db_cli
 
 # Install diesel_cli for running migrations
 RUN cargo install diesel_cli --no-default-features --features postgres
 
-# Runtime stage
+# =========================
+# Runtime Stage
+# =========================
 FROM debian:bullseye-slim
 
 WORKDIR /app
@@ -56,12 +62,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the binaries from builder
-COPY --from=builder /app/target/release/rsky-pds /usr/local/bin/rsky-pds
-COPY --from=builder /app/rsky-pdsadmin/target/release/pdsadmin /usr/local/bin/pdsadmin
+COPY --from=builder /app/src/target/release/rsky-pds /usr/local/bin/rsky-pds
+COPY --from=builder /app/src/rsky-pdsadmin/target/release/pdsadmin /usr/local/bin/pdsadmin
 COPY --from=builder /usr/local/cargo/bin/diesel /usr/local/bin/diesel
 
-# Copy migrations from the cloned repo
-COPY --from=builder /app/rsky-pds/migrations /app/migrations
+# Copy migrations
+COPY --from=builder /app/src/rsky-pds/migrations /app/migrations
 
 # Set default environment variables
 ENV ROCKET_ADDRESS=0.0.0.0
