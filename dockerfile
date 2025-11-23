@@ -24,6 +24,8 @@ RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 RUN cargo build --release --package rsky-pds
 
 # Build the rsky-pdsadmin package (in its own workspace)
+# Create a symlink so the embed_migrations! macro can find the migrations
+RUN ln -s /app/rsky-pds /app/rsky-pdsadmin/rsky-pds
 RUN cd rsky-pdsadmin && cargo build --release --features db_cli
 
 # Install diesel_cli for running migrations
