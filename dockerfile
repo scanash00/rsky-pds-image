@@ -20,8 +20,11 @@ RUN apt-get update && \
 # Clone the repository
 RUN git clone --depth 1 https://github.com/blacksky-algorithms/rsky.git .
 
-# Build the rsky-pds and rsky-pdsadmin packages
-RUN cargo build --release --package rsky-pds --package rsky-pdsadmin
+# Build the rsky-pds package
+RUN cargo build --release --package rsky-pds
+
+# Build the rsky-pdsadmin package (in its own workspace)
+RUN cd rsky-pdsadmin && cargo build --release --features db_cli
 
 # Runtime stage
 FROM debian:bullseye-slim
@@ -47,7 +50,7 @@ RUN apt-get update && \
 
 # Copy the binaries from builder
 COPY --from=builder /app/target/release/rsky-pds /usr/local/bin/rsky-pds
-COPY --from=builder /app/target/release/rsky-pdsadmin /usr/local/bin/rsky-pdsadmin
+COPY --from=builder /app/rsky-pdsadmin/target/release/pdsadmin /usr/local/bin/pdsadmin
 
 # Copy migrations from the cloned repo
 COPY --from=builder /app/rsky-pds/migrations /app/migrations
