@@ -17,6 +17,7 @@ RUN apt-get update && \
         libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
+# bro??
 # Clone the repository
 ADD https://api.github.com/repos/scanash00/rsky/git/refs/heads/main version.json
 RUN git clone --depth 1 https://github.com/scanash00/rsky.git .
