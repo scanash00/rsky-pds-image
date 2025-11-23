@@ -1,11 +1,11 @@
-# =========================
+########################################
 # Builder Stage
-# =========================
+########################################
 FROM rust:1.86-slim-bullseye AS builder
 
 WORKDIR /app
 
-# Install build dependencies including PostgreSQL client libraries
+# Install build dependencies
 RUN apt-get update && \
     apt-get install -y \
         git \
@@ -19,12 +19,14 @@ RUN apt-get update && \
         libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Force cache bust when repo updates
-# (does NOT populate the directory, so clone won't fail)
-ADD https://api.github.com/repos/scanash00/rsky/git/refs/heads/main version.json
+# Cache bust ONLY when upstream repo changes
+# (this hashes the commit ref of the branch, not the repo contents)
+ADD https://api.github.com/repos/scanash00/rsky/git/refs/heads/main upstream_version.json
 
-# Clone the repository into a clean directory
+# Clone repo into a clean directory so ADD doesn't conflict
 RUN git clone --depth 1 https://github.com/scanash00/rsky.git src
+
+# Switch into cloned repo
 WORKDIR /app/src
 
 # Build the rsky-pds package
@@ -37,14 +39,15 @@ RUN cd rsky-pdsadmin && cargo build --release --features db_cli
 # Install diesel_cli for running migrations
 RUN cargo install diesel_cli --no-default-features --features postgres
 
-# =========================
+
+########################################
 # Runtime Stage
-# =========================
+########################################
 FROM debian:bullseye-slim
 
 WORKDIR /app
 
-# Install runtime dependencies including PostgreSQL client library
+# Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y \
         ca-certificates \
@@ -61,7 +64,7 @@ RUN apt-get update && \
         bash && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the binaries from builder
+# Copy built binaries
 COPY --from=builder /app/src/target/release/rsky-pds /usr/local/bin/rsky-pds
 COPY --from=builder /app/src/rsky-pdsadmin/target/release/pdsadmin /usr/local/bin/pdsadmin
 COPY --from=builder /usr/local/cargo/bin/diesel /usr/local/bin/diesel
@@ -69,7 +72,7 @@ COPY --from=builder /usr/local/cargo/bin/diesel /usr/local/bin/diesel
 # Copy migrations
 COPY --from=builder /app/src/rsky-pds/migrations /app/migrations
 
-# Set default environment variables
+# Default environment
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=2583
 
