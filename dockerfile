@@ -26,6 +26,9 @@ RUN cargo build --release --package rsky-pds
 # Build the rsky-pdsadmin package (in its own workspace)
 RUN cd rsky-pdsadmin && cargo build --release --features db_cli
 
+# Install diesel_cli for running migrations
+RUN cargo install diesel_cli --no-default-features --features postgres
+
 # Runtime stage
 FROM debian:bullseye-slim
 
@@ -51,6 +54,7 @@ RUN apt-get update && \
 # Copy the binaries from builder
 COPY --from=builder /app/target/release/rsky-pds /usr/local/bin/rsky-pds
 COPY --from=builder /app/rsky-pdsadmin/target/release/pdsadmin /usr/local/bin/pdsadmin
+COPY --from=builder /usr/local/cargo/bin/diesel /usr/local/bin/diesel
 
 # Copy migrations from the cloned repo
 COPY --from=builder /app/rsky-pds/migrations /app/migrations
